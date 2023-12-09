@@ -1,0 +1,25 @@
+/*
+ * Timer_1.c
+ *
+ *  Created on: 2 Nov 2023
+ *      Author: Zeyad El-banna
+ */
+
+#include "Timer_1.c"
+#include "common_macros.h"
+#include <avr/io.h>
+
+void Timer1_init(const Timer1_ConfigType * Config_Ptr)
+{
+   TCCR1A = (1<<FOC1A) | (1<<FOC1B) | (((Config_Ptr->mode)&0x03) | TCCR1A);
+
+}
+void Timer1_deInit(void)
+{
+
+}
+void Timer1_setCallBack(void(*a_ptr)(void))
+{
+
+}
+

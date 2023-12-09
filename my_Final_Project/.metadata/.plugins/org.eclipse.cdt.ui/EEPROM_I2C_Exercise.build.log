@@ -1,0 +1,38 @@
+21:07:33 **** Incremental Build of configuration Debug for project EEPROM_I2C_Exercise ****
+make all 
+Building file: ../External_EEPROM_I2C.c
+Invoking: AVR Compiler
+avr-gcc -Wall -g2 -gstabs -O0 -fpack-struct -fshort-enums -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -mmcu=atmega32 -DF_CPU=8000000UL -MMD -MP -MF"External_EEPROM_I2C.d" -MT"External_EEPROM_I2C.o" -c -o "External_EEPROM_I2C.o" "../External_EEPROM_I2C.c"
+In file included from ../External_EEPROM_I2C.c:12:
+c:/winavr-20100110/lib/gcc/../../avr/include/util/delay.h:90:3: warning: #warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+../External_EEPROM_I2C.c: In function 'main':
+../External_EEPROM_I2C.c:18: warning: large integer implicitly truncated to unsigned type
+Finished building: ../External_EEPROM_I2C.c
+ 
+Building target: EEPROM_I2C_Exercise.elf
+Invoking: AVR C Linker
+avr-gcc -Wl,-Map,EEPROM_I2C_Exercise.map -mmcu=atmega32 -o "EEPROM_I2C_Exercise.elf"  ./External_EEPROM_I2C.o ./external_eeprom.o ./gpio.o ./twi.o   
+Finished building target: EEPROM_I2C_Exercise.elf
+ 
+Invoking: AVR Create Extended Listing
+avr-objdump -h -S EEPROM_I2C_Exercise.elf  >"EEPROM_I2C_Exercise.lss"
+Finished building: EEPROM_I2C_Exercise.lss
+ 
+Invoking: Print Size
+avr-size --format=avr --mcu=atmega32 EEPROM_I2C_Exercise.elf
+AVR Memory Usage
+----------------
+Device: atmega32
+
+Program:    5754 bytes (17.6% Full)
+(.text + .data + .bootloader)
+
+Data:          8 bytes (0.4% Full)
+(.data + .bss + .noinit)
+
+
+Finished building: sizedummy
+ 
+
+21:07:33 Build Finished. 0 errors, 2 warnings. (took 735ms)
+

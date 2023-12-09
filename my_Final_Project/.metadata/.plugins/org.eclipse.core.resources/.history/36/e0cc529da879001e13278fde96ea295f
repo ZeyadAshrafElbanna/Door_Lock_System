@@ -1,0 +1,90 @@
+/*
+ * project_MC_1.c
+ *
+ *  Created on: 2 Nov 2023
+ *      Author: Zeyad El-banna
+ */
+#include"keypad.h"
+#include"lcd.h"
+#include"uart.h"
+#include<util/delay.h>
+
+#define MC2_READY 0xFF
+#define SAME_PASS 0x01
+#define NOT_SAME_PASS 0x00
+
+void Enter_Pass(void);
+void Re_Enter_Pass(void);
+void controler_response (void);
+
+int main(void)
+{
+	LCD_init();
+	UART_ConfigType UART_Config = {eghit , diabled , one_bit ,9600};
+	UART_init(&UART_Config);
+	_delay_ms(500);
+	while(UART_recieveByte() != MC2_READY){}
+	while(1)
+	{
+		Enter_Pass();
+	}
+	return 0 ;
+}
+void Enter_Pass(void)
+{
+	UART_sendByte(0xD0);
+	LCD_displayString("Plz Enter Pass : ");
+	LCD_moveCursor(1,0);
+	uint8 key , i ;
+	for(i=0 ; i<6;i++)
+	{
+	key = KEYPAD_getPressedKey();
+			if((key >= 0) && (key <= 9))
+			{
+				LCD_displayCharacter('*');
+				UART_sendByte(key);
+			}
+			else if(key == 13)
+			{
+				Re_Enter_Pass();
+			}
+			_delay_ms(500);
+	}
+}
+void Re_Enter_Pass(void)
+{
+	UART_sendByte(0xC0);
+	LCD_moveCursor(0,0);
+	LCD_clearScreen();
+	LCD_displayString("Plz Re_Enter the ");
+	LCD_moveCursor(1,0);
+	LCD_displayString("same pass:");
+	uint8 key , i ;
+		for(i=0 ; i<6;i++)
+		{
+		key = KEYPAD_getPressedKey();
+				if((key >= 0) && (key <= 9))
+				{
+					LCD_displayCharacter('*');
+					UART_sendByte(key);
+				}
+				else if(key == 13)
+				{
+					UART_sendByte(key);
+					controler_response ();
+				}
+				_delay_ms(500);
+		}
+}
+void controler_response (void)
+{
+	uint8 response = UART_recieveByte() ;
+	if(response == SAME_PASS)
+	{
+
+	}
+	else if (response == NOT_SAME_PASS)
+	{
+		Enter_Pass();
+	}
+}

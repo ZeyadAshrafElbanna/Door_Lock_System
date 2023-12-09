@@ -1,0 +1,37 @@
+/*
+ * Timer_1.c
+ *
+ *  Created on: 2 Nov 2023
+ *      Author: Zeyad El-banna
+ */
+
+#include "Timer_1.h"
+#include "common_macros.h"
+#include <avr/io.h>
+
+void Timer1_init(const Timer1_ConfigType * Config_Ptr)
+{
+   TCCR1A = (1<<FOC1A) | (1<<FOC1B) | (((Config_Ptr->mode)&0x03) | (TCCR1A & 0xFC));
+   TCCR1B = (((Config_Ptr->mode)>>2)<<WGM12) | ((Config_Ptr->prescaler) | (TCCR1B & 0xF8));
+   TCNT1 = Config_Ptr->initial_value;
+   OCR1A = Config_Ptr->compare_value;
+   if((Config_Ptr->mode) == compar )
+   {
+	   TIMSK = (1<<OCIE1A);
+   }
+   else if ((Config_Ptr->mode) == normal)
+   {
+	   TIMSK = (1<<TOIE1);
+   }
+
+
+}
+void Timer1_deInit(void)
+{
+
+}
+void Timer1_setCallBack(void(*a_ptr)(void))
+{
+
+}
+

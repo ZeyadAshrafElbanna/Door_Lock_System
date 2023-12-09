@@ -1,0 +1,265 @@
+/*
+ * project_MC_1.c
+ *
+ *  Created on: 2 Nov 2023
+ *      Author: Zeyad El-banna
+ */
+#include"keypad.h"
+#include"lcd.h"
+#include"uart.h"
+#include<util/delay.h>
+#include"Timer_1.h"
+#include<avr/io.h>
+
+#define MC2_READY 0xFF
+#define SAME_PASS 0x01
+#define NOT_SAME_PASS 0x00
+#define DOOR_OPENED 0x02
+#define DOOR_CLOSED 0x03
+#define START 0x44
+#define ENTER_PASS 0xD0
+#define RE_ENTER_PASS 0xC0
+#define ENTER 13
+#define ENTER_PASS_TWO 0xE0
+#define CHANGE_PASS 0xF0
+#define ALARM 0xA0
+#define WRONG 0xAA
+
+void Enter_Pass(void);
+void Re_Enter_Pass(void);
+void controler_response (void);
+void main_options (void);
+void Enter_pass_second(void);
+void contoller_response_two (void);
+void change_pass(void);
+void timer_isr(void);
+
+volatile static uint8 chances= 0;
+volatile static uint8 ticks = 0;
+
+int main(void)
+{
+	LCD_init();
+	UART_ConfigType UART_Config = {eghit , diabled , one_bit ,9600};
+	UART_init(&UART_Config);
+	Timer1_setCallBack(timer_isr);
+	SREG |= (1<<7);
+	_delay_ms(500);
+	while(UART_recieveByte() != MC2_READY){}
+	while(1)
+	{
+		Enter_Pass();
+	}
+	return 0 ;
+}
+void Enter_Pass(void)
+{
+	UART_sendByte(ENTER_PASS);
+	LCD_moveCursor(0,0);
+	LCD_clearScreen();
+	LCD_displayString("Plz Enter Pass : ");
+	LCD_moveCursor(1,0);
+	uint8 key , i ;
+	for(i=0 ; i<6;i++)
+	{
+	key = KEYPAD_getPressedKey();
+			if((key >= 0) && (key <= 9))
+			{
+				LCD_displayCharacter('*');
+				UART_sendByte(key);
+			}
+			else if(key == ENTER)
+			{
+				Re_Enter_Pass();
+			}
+			_delay_ms(500);
+	}
+}
+void Re_Enter_Pass(void)
+{
+	UART_sendByte(RE_ENTER_PASS);
+	LCD_moveCursor(0,0);
+	LCD_clearScreen();
+	LCD_displayString("Plz Re_Enter the ");
+	LCD_moveCursor(1,0);
+	LCD_displayString("same pass:");
+	uint8 key , i ;
+		for(i=0 ; i<6;i++)
+		{
+		key = KEYPAD_getPressedKey();
+				if((key >= 0) && (key <= 9))
+				{
+					LCD_displayCharacter('*');
+					UART_sendByte(key);
+				}
+				else if(key == ENTER)
+				{
+					UART_sendByte(ENTER);
+					_delay_ms(500);
+					controler_response ();
+				}
+				_delay_ms(500);
+		}
+}
+void controler_response (void)
+{
+	uint8 response = UART_recieveByte() ;
+	if(response == SAME_PASS)
+	{
+		 main_options ();
+	}
+	else if (response == NOT_SAME_PASS)
+	{
+		Enter_Pass();
+	}
+}
+void main_options (void)
+{
+	LCD_moveCursor(0,0);
+	LCD_clearScreen();
+	LCD_displayString("+ : Open Door");
+	LCD_moveCursor(1,0);
+	LCD_displayString("- : Change Pass");
+	uint8 key;
+	key = KEYPAD_getPressedKey();
+	   if(key == '+')
+			{
+		       Enter_pass_second();
+			}
+		else if(key == '-')
+			{
+			   change_pass();
+			}
+	_delay_ms(500);
+}
+void Enter_pass_second(void)
+{
+	UART_sendByte(ENTER_PASS_TWO);
+	LCD_moveCursor(0,0);
+	LCD_clearScreen();
+	LCD_displayString("Plz Enter Pass : ");
+	LCD_moveCursor(1,0);
+	uint8 key , i ;
+	while(UART_recieveByte() != START){}
+		for(i=0 ; i<6;i++)
+		{
+		   key = KEYPAD_getPressedKey();
+				if((key >= 0) && (key <= 9))
+				{
+					LCD_displayCharacter('*');
+					UART_sendByte(key);
+				}
+				else if(key == ENTER)
+				{
+					UART_sendByte(ENTER);
+					_delay_ms(500);
+					while(UART_recieveByte() != START){}
+					contoller_response_two ();
+				}
+				_delay_ms(500);
+		}
+}
+void contoller_response_two (void)
+{
+	while(UART_recieveByte() != START ){};
+	uint8 response = UART_recieveByte() ;
+	if(response == DOOR_OPENED)
+	{
+		LCD_clearScreen();
+		LCD_moveCursor(0,0);
+		LCD_displayString("Door is ");
+		LCD_moveCursor(1,0);
+		LCD_displayString("unlocking");
+		UART_sendByte(DOOR_CLOSED);
+		while(UART_recieveByte() != START ){}
+			response = UART_recieveByte() ;
+			if(response == DOOR_CLOSED)
+			{
+				LCD_clearScreen();
+				LCD_moveCursor(0,0);
+				LCD_displayString("Door is locking");
+				Timer1_ConfigType Timer_config = {26473 , 0 ,F_CPU_1024,normal };
+				Timer1_init(&Timer_config);
+				while(ticks != 3){}
+				Timer1_deInit();
+				ticks = 0 ;
+				main_options();
+
+			}
+	}
+	else if (response == ALARM)
+	{
+		UART_sendByte(ALARM);
+		while(UART_recieveByte() != START){}
+     	LCD_moveCursor(0,0);
+		LCD_clearScreen();
+    	LCD_displayString("Error");
+		Timer1_ConfigType Timer_config_buzzer = {0 , 0 ,F_CPU_1024,normal };
+		Timer1_init(&Timer_config_buzzer);
+		while(ticks != 7){}
+		Timer1_deInit();
+		ticks = 0 ;
+		main_options ();
+	}
+	else if (response == WRONG)
+	{
+		Enter_pass_second();
+	}
+
+}
+void change_pass(void)
+{
+	UART_sendByte(CHANGE_PASS);
+	LCD_moveCursor(0,0);
+	LCD_clearScreen();
+	LCD_displayString("Plz Enter Pass : ");
+	LCD_moveCursor(1,0);
+	uint8 key , i ,response;
+	while(UART_recieveByte() != START){}
+		for(i=0 ; i<6;i++)
+		  {
+			   key = KEYPAD_getPressedKey();
+					if((key >= 0) && (key <= 9))
+					{
+						LCD_displayCharacter('*');
+						UART_sendByte(key);
+					}
+					else if(key == ENTER)
+					{
+						UART_sendByte(ENTER);
+						_delay_ms(500);
+						while(UART_recieveByte() != START){}
+						response = UART_recieveByte();
+						if(response == 0)
+						{
+							chances++;
+							if(chances == 3)
+							{
+								chances = 0;
+								UART_sendByte(ALARM);
+								while(UART_recieveByte() != START){}
+								LCD_moveCursor(0,0);
+								LCD_clearScreen();
+								LCD_displayString("Error");
+								Timer1_ConfigType Timer_config_buzzer = {0 , 0 ,F_CPU_1024,normal };
+								Timer1_init(&Timer_config_buzzer);
+								while(ticks != 7){}
+								Timer1_deInit();
+								ticks = 0 ;
+								main_options ();
+							}
+							change_pass();
+						}
+						else if (response == 1)
+						{
+							Enter_Pass();
+						}
+					}
+					_delay_ms(500);
+		 }
+
+}
+void timer_isr(void)
+{
+	ticks ++;
+}

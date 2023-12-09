@@ -1,0 +1,22 @@
+/*
+ * Buzzer.c
+ *
+ *  Created on: 2 Nov 2023
+ *      Author: Zeyad El-banna
+ */
+#include"Buzzer.h"
+#include"gpio.h"
+
+void Buzzer_init(void)
+{
+
+}
+void Buzzer_on(void)
+{
+
+}
+void Buzzer_off(void)
+{
+
+}
+
